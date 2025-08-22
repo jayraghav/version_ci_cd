@@ -18,9 +18,9 @@ class LoginViewModel : ViewModel() {
 
         // Dummy credentials check
         if (username == "admin" && password == "1234") {
-            _loginResult.value = LoginResult.Success
+            _loginResult.postValue(LoginResult.Success)
         } else {
-            _loginResult.value = LoginResult.Error("Invalid credentials")
+            _loginResult.postValue(LoginResult.Error("Invalid credentials"))
         }
     }
 
