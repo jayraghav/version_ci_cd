@@ -59,8 +59,10 @@ jobs:
   instrumentation-test:
     needs: [unit-test]
     runs-on: macos-latest
+    timeout-minutes: 15
+
     steps:
-      - name: Checkout the code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -69,17 +71,22 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Run Espresso instrumentation tests
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 29
-          target: default
-          arch: x86_64
-          profile: Nexus 6
-          script: ./gradlew connectedCheck
+      - name: Create and start emulator
+        run: |
+          echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;x86"
+          emulator -avd test -no-window -no-audio -no-boot-anim &
+          timeout 600s adb wait-for-device
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+        env:
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
+
+      - name: Run Instrumented Tests
+        run: ./gradlew connectedDebugAndroidTest
 
       - name: Upload instrumentation test report
         uses: actions/upload-artifact@v4
